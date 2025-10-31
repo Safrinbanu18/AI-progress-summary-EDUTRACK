@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Progress Summary</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>AI Progress Summary Dashboard</h1>
+    <p>Enter your productivity score for the last 7 days (0–100):</p>
+
+    <div class="input-grid">
+      <input type="number" id="day1" placeholder="Day 1" min="0" max="100">
+      <input type="number" id="day2" placeholder="Day 2" min="0" max="100">
+      <input type="number" id="day3" placeholder="Day 3" min="0" max="100">
+      <input type="number" id="day4" placeholder="Day 4" min="0" max="100">
+      <input type="number" id="day5" placeholder="Day 5" min="0" max="100">
+      <input type="number" id="day6" placeholder="Day 6" min="0" max="100">
+      <input type="number" id="day7" placeholder="Day 7" min="0" max="100">
+    </div>
+
+    <button onclick="submitData()">Analyze My Week</button>
+
+    <div id="summary-box">
+      <h2>AI Summary:</h2>
+      <p id="summaryText">Your performance summary will appear here...</p>
+    </div>
+
+    <canvas id="chart"></canvas>
+  </div>
+
+  <script>
+    async function submitData() {
+      const activities = [
+        parseInt(document.getElementById('day1').value),
+        parseInt(document.getElementById('day2').value),
+        parseInt(document.getElementById('day3').value),
+        parseInt(document.getElementById('day4').value),
+        parseInt(document.getElementById('day5').value),
+        parseInt(document.getElementById('day6').value),
+        parseInt(document.getElementById('day7').value)
+      ];
+
+      if (activities.some(isNaN)) {
+        alert("Please enter all 7 day scores!");
+        return;
+      }
+
+      const res = await fetch('/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ activities })
+      });
+
+      const result = await res.json();
+
+      if (result.error) {
+        alert("Error: " + result.error);
+        return;
+      }
+
+      document.getElementById('summaryText').textContent = result.summary;
+
+      // Draw chart
+      const ctx = document.getElementById('chart');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7'],
+          datasets: [{
+            label: 'Daily Productivity Score',
+            data: result.activities,
+            borderWidth: 3,
+            borderColor: 'blue',
+            tension: 0.3
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true, max: 100 }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
